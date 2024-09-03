@@ -21,87 +21,87 @@
  * not guaranteed to work but was the only way to make this work. Also has to be careful about
  * accessor decorators.
  */
+import {TsickleHost} from '@brianleishman/tsickle';
 import * as ts from 'typescript';
-import {TsickleHost} from 'tsickle';
 import TsHelperTransformer from './ts_helper_transformer';
 
 export default function decoratorPropertyTransformer(tsickleHost: TsickleHost):
-	(context: ts.TransformationContext) => ts.Transformer<ts.SourceFile> {
-	return (context: ts.TransformationContext) => {
-		return (sf: ts.SourceFile) => {
-			return new DecoratorTransformer(tsickleHost, context, sf).transformSourceFile();
-		};
-	};
+    (context: ts.TransformationContext) => ts.Transformer<ts.SourceFile> {
+    return (context: ts.TransformationContext) => {
+        return (sf: ts.SourceFile) => {
+            return new DecoratorTransformer(tsickleHost, context, sf).transformSourceFile();
+        };
+    };
 }
 
 class DecoratorTransformer extends TsHelperTransformer {
-	protected HELPER_NAME = "__decorate";
+    protected HELPER_NAME = "__decorate";
 
-	private tempGlobalAssignments: ts.Statement[] = [];
-	private getId() {
-		return `tscc_global_access_name_${this.counter++}`;
-	}
-	private counter = 1;
+    private tempGlobalAssignments: ts.Statement[] = [];
+    private getId() {
+        return `tscc_global_access_name_${this.counter++}`;
+    }
+    private counter = 1;
 
-	protected onHelperCall(node: ts.CallExpression, googReflectImport: ts.Identifier) {
-		// Found a candidate. Decorator helper call signature:
-		// __decorate([decoratorsArray], <target>, <propertyName>, <desc>)
-		// Note that class decorator only has 2 arguments.
-		let propNameLiteral = node.arguments[2];
-		if (!propNameLiteral || !ts.isStringLiteral(propNameLiteral)) return;
-		let propName = propNameLiteral.text;
+    protected onHelperCall(node: ts.CallExpression, googReflectImport: ts.Identifier) {
+        // Found a candidate. Decorator helper call signature:
+        // __decorate([decoratorsArray], <target>, <propertyName>, <desc>)
+        // Note that class decorator only has 2 arguments.
+        let propNameLiteral = node.arguments[2];
+        if (!propNameLiteral || !ts.isStringLiteral(propNameLiteral)) return;
+        let propName = propNameLiteral.text;
 
-		// Create goog.reflect.objectProperty
-		const target = node.arguments[1];
-		const googReflectObjectProperty = ts.setTextRange(
-			this.factory.createCallExpression(
-				this.factory.createPropertyAccessExpression(
-					googReflectImport,
-					this.factory.createIdentifier('objectProperty')
-				),
-				undefined,
-				[
-					this.factory.createStringLiteral(propName),
-					ts.getMutableClone(target)
-				]
-			),
-			propNameLiteral
-		);
-		// Replace third argument of __decorate call to goog.reflect.objectProperty.
-		// If TS output is in ES3 mode, there will be 3 arguments in __decorate call.
-		// if its higher than or equal to ES5 mode, there will be 4 arguments.
-		// The number of arguments must be preserved.
-		const caller = node.expression;
-		const decorateArgs = node.arguments.slice();
-		decorateArgs.splice(2, 1, googReflectObjectProperty);
-		const newCallExpression = this.factory.createCallExpression(caller, undefined, decorateArgs);
-		const globalAssignment = this.factory.createBinaryExpression(
-			this.factory.createElementAccessExpression(
-				this.factory.createIdentifier("self"),
-				this.factory.createStringLiteral(this.getId())
-			),
-			this.factory.createToken(ts.SyntaxKind.FirstAssignment),
-			this.factory.createPropertyAccessExpression(
-				this.factory.createParenthesizedExpression(ts.getMutableClone(target)),
-				this.factory.createIdentifier(propName)
-			)
-		);
-		this.tempGlobalAssignments.push(
-			ts.setEmitFlags(
-				this.factory.createExpressionStatement(globalAssignment),
-				ts.EmitFlags.NoSourceMap | ts.EmitFlags.NoTokenSourceMaps | ts.EmitFlags.NoNestedSourceMaps
-			)
-		);
-		return newCallExpression;
-	}
+        // Create goog.reflect.objectProperty
+        const target = node.arguments[1];
+        const googReflectObjectProperty = ts.setTextRange(
+            this.factory.createCallExpression(
+                this.factory.createPropertyAccessExpression(
+                    googReflectImport,
+                    this.factory.createIdentifier('objectProperty')
+                ),
+                undefined,
+                [
+                    this.factory.createStringLiteral(propName),
+                    ts.getMutableClone(target)
+                ]
+            ),
+            propNameLiteral
+        );
+        // Replace third argument of __decorate call to goog.reflect.objectProperty.
+        // If TS output is in ES3 mode, there will be 3 arguments in __decorate call.
+        // if its higher than or equal to ES5 mode, there will be 4 arguments.
+        // The number of arguments must be preserved.
+        const caller = node.expression;
+        const decorateArgs = node.arguments.slice();
+        decorateArgs.splice(2, 1, googReflectObjectProperty);
+        const newCallExpression = this.factory.createCallExpression(caller, undefined, decorateArgs);
+        const globalAssignment = this.factory.createBinaryExpression(
+            this.factory.createElementAccessExpression(
+                this.factory.createIdentifier("self"),
+                this.factory.createStringLiteral(this.getId())
+            ),
+            this.factory.createToken(ts.SyntaxKind.FirstAssignment),
+            this.factory.createPropertyAccessExpression(
+                this.factory.createParenthesizedExpression(ts.getMutableClone(target)),
+                this.factory.createIdentifier(propName)
+            )
+        );
+        this.tempGlobalAssignments.push(
+            ts.setEmitFlags(
+                this.factory.createExpressionStatement(globalAssignment),
+                ts.EmitFlags.NoSourceMap | ts.EmitFlags.NoTokenSourceMaps | ts.EmitFlags.NoNestedSourceMaps
+            )
+        );
+        return newCallExpression;
+    }
 
-	protected combineStatements(stmts: ts.Statement[], googReflectImport: ts.Identifier) {
-		super.combineStatements(stmts, googReflectImport);
-		stmts.push(
-			this.factory.createExpressionStatement(this.factory.createStringLiteral("__tscc_export_start__")),
-			this.factory.createBlock(this.tempGlobalAssignments),
-			this.factory.createExpressionStatement(this.factory.createStringLiteral('__tscc_export_end__'))
-		);
-		return stmts;
-	}
+    protected combineStatements(stmts: ts.Statement[], googReflectImport: ts.Identifier) {
+        super.combineStatements(stmts, googReflectImport);
+        stmts.push(
+            this.factory.createExpressionStatement(this.factory.createStringLiteral("__tscc_export_start__")),
+            this.factory.createBlock(this.tempGlobalAssignments),
+            this.factory.createExpressionStatement(this.factory.createStringLiteral('__tscc_export_end__'))
+        );
+        return stmts;
+    }
 }

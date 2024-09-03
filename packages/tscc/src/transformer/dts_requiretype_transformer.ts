@@ -18,12 +18,12 @@
  *
  * TODO: improve comment here and documentation.
  */
+import {TsickleHost} from '@brianleishman/tsickle';
+import {moduleNameAsIdentifier} from '@brianleishman/tsickle/out/src/annotator_host';
 import * as ts from 'typescript';
-import ITsccSpecWithTS from '../spec/ITsccSpecWithTS';
-import {TsickleHost} from 'tsickle';
-import {moduleNameAsIdentifier} from 'tsickle/out/src/annotator_host';
-import {isGoogRequireLikeStatement, topLevelStatementTransformerFactory} from './transformer_utils';
 import {escapedGoogNameIsDts, unescapeGoogAdmissibleName} from '../shared/escape_goog_identifier';
+import ITsccSpecWithTS from '../spec/ITsccSpecWithTS';
+import {isGoogRequireLikeStatement, topLevelStatementTransformerFactory} from './transformer_utils';
 import path = require('path');
 
 /**
@@ -34,45 +34,45 @@ import path = require('path');
  * a global symbol. This results in no `goog.require` or `goog.requireType` emit.
  */
 export default function dtsRequireTypeTransformer(spec: ITsccSpecWithTS, tsickleHost: TsickleHost)
-	: (context: ts.TransformationContext) => ts.Transformer<ts.SourceFile> {
-	const externalModuleNames = spec.getExternalModuleNames();
+    : (context: ts.TransformationContext) => ts.Transformer<ts.SourceFile> {
+    const externalModuleNames = spec.getExternalModuleNames();
 
-	return topLevelStatementTransformerFactory((node, fh) => {
-		let _ = isGoogRequireLikeStatement(node, "requireType");
-		if (!_) return node;
-		let {importedUrl, newIdent} = _;
+    return topLevelStatementTransformerFactory((node, fh) => {
+        let _ = isGoogRequireLikeStatement(node, "requireType");
+        if (!_) return node;
+        let {importedUrl, newIdent} = _;
 
-		// We are only interested in `requireType`ing .d.ts files.
-		if (!escapedGoogNameIsDts(importedUrl)) return node;
-		// If imported url is external module, no need to handle it further.
-		if (externalModuleNames.includes(importedUrl)) return node;
-		// origUrl will be a file path relative to the ts project root.
-		let origUrl = unescapeGoogAdmissibleName(importedUrl);
-		let absoluteOrigUrl = path.resolve(spec.getTSRoot(), origUrl);
-		// We must figure out on what namespace the extern for this module is defined.
-		// See tsickle/src/externs.js for precise logic. In our case, goog.requireType(....d.ts)
-		// will be emitted for "module .d.ts", in which case a mangled name derived from a
-		// .d.ts file's path is used. See how `moduleNamespace`, `rootNamespace` is constructed
-		// in tsickle/src/externs.js.
-		// This relies on the heuristic of tsickle, so must be carefully validated whenever tsickle updates.
-		let mangledNamespace = moduleNameAsIdentifier(tsickleHost, absoluteOrigUrl);
-		if (newIdent.escapedText === mangledNamespace) {
-			// Name of the introduced identifier coincides with the global identifier,
-			// no need to emit things.
-			return setOriginalNode(fh.factory.createEmptyStatement(), node);
-		}
-		// Convert `const importedName = goog.requireType("module d.ts")` to:
-		// `const importedName = mangledNamespace;`
-		return setOriginalNode(
-			fh.createVariableAssignment(
-				newIdent, fh.namespaceToQualifiedName(mangledNamespace),
+        // We are only interested in `requireType`ing .d.ts files.
+        if (!escapedGoogNameIsDts(importedUrl)) return node;
+        // If imported url is external module, no need to handle it further.
+        if (externalModuleNames.includes(importedUrl)) return node;
+        // origUrl will be a file path relative to the ts project root.
+        let origUrl = unescapeGoogAdmissibleName(importedUrl);
+        let absoluteOrigUrl = path.resolve(spec.getTSRoot(), origUrl);
+        // We must figure out on what namespace the extern for this module is defined.
+        // See tsickle/src/externs.js for precise logic. In our case, goog.requireType(....d.ts)
+        // will be emitted for "module .d.ts", in which case a mangled name derived from a
+        // .d.ts file's path is used. See how `moduleNamespace`, `rootNamespace` is constructed
+        // in tsickle/src/externs.js.
+        // This relies on the heuristic of tsickle, so must be carefully validated whenever tsickle updates.
+        let mangledNamespace = moduleNameAsIdentifier(tsickleHost, absoluteOrigUrl);
+        if (newIdent.escapedText === mangledNamespace) {
+            // Name of the introduced identifier coincides with the global identifier,
+            // no need to emit things.
+            return setOriginalNode(fh.factory.createEmptyStatement(), node);
+        }
+        // Convert `const importedName = goog.requireType("module d.ts")` to:
+        // `const importedName = mangledNamespace;`
+        return setOriginalNode(
+            fh.createVariableAssignment(
+                newIdent, fh.namespaceToQualifiedName(mangledNamespace),
 				/* useConst */ tsickleHost.options.target !== ts.ScriptTarget.ES5
-			),
-			node
-		);
-	});
+            ),
+            node
+        );
+    });
 }
 
 function setOriginalNode<T extends ts.Node>(range: T, node: ts.Statement): T {
-	return ts.setOriginalNode<T>(ts.setTextRange(range, node), node);
+    return ts.setOriginalNode<T>(ts.setTextRange(range, node), node);
 }

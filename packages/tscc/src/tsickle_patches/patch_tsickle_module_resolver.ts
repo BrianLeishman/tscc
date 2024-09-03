@@ -14,60 +14,60 @@ import path = require('path');
  * to /.../my-package/node_modules/external-package
  */
 export function getPackageBoundary(fileName: string): string {
-	let segments = path.normalize(fileName).split(path.sep);
-	let i = segments.lastIndexOf("node_modules");
-	let packageName = segments[i + 1];
-	if (typeof packageName === 'string' && packageName.startsWith("@")) {
-		/**
-		 * Scoped packages, see
-		 * {@link https://nodejs.org/api/modules.html#modules_all_together}, LOAD_PACKAGE_EXPORTS
-		 */
-		i++;
-	}
-	let moduleDir = segments.slice(0, i + 2).join(path.sep);
-	return moduleDir + path.sep; // Note that this becomes '/' when node_modules is not found.
+    let segments = path.normalize(fileName).split(path.sep);
+    let i = segments.lastIndexOf("node_modules");
+    let packageName = segments[i + 1];
+    if (typeof packageName === 'string' && packageName.startsWith("@")) {
+        /**
+         * Scoped packages, see
+         * {@link https://nodejs.org/api/modules.html#modules_all_together}, LOAD_PACKAGE_EXPORTS
+         */
+        i++;
+    }
+    let moduleDir = segments.slice(0, i + 2).join(path.sep);
+    return moduleDir + path.sep; // Note that this becomes '/' when node_modules is not found.
 }
 
 function resolveModuleName(
-	host: {
-		options: ts.CompilerOptions,
-		moduleResolutionHost: ts.ModuleResolutionHost
-	},
-	pathOfImportingFile: string,
-	imported: string
+    host: {
+        options: ts.CompilerOptions,
+        moduleResolutionHost: ts.ModuleResolutionHost
+    },
+    pathOfImportingFile: string,
+    imported: string
 ): string {
-	const resolved = ts.resolveModuleName(
-		imported,
-		pathOfImportingFile,
-		host.options,
-		host.moduleResolutionHost
-	);
-	if (!resolved || !resolved.resolvedModule) {
-		return imported;
-	}
-	const resolvedModule = resolved.resolvedModule.resolvedFileName;
-	// check if resolvedModule pierces node_modules package boundary of pathOfImportingFile
-	const importingFileBoundary = getPackageBoundary(pathOfImportingFile);
-	const resolvedFileBoundary = getPackageBoundary(resolvedModule);
-	if (importingFileBoundary !== resolvedFileBoundary) {
-		// Do not resolve it, "must specially be handled by loaders anyway"
-		return imported;
-	}
-	return resolvedModule;
+    const resolved = ts.resolveModuleName(
+        imported,
+        pathOfImportingFile,
+        host.options,
+        host.moduleResolutionHost
+    );
+    if (!resolved || !resolved.resolvedModule) {
+        return imported;
+    }
+    const resolvedModule = resolved.resolvedModule.resolvedFileName;
+    // check if resolvedModule pierces node_modules package boundary of pathOfImportingFile
+    const importingFileBoundary = getPackageBoundary(pathOfImportingFile);
+    const resolvedFileBoundary = getPackageBoundary(resolvedModule);
+    if (importingFileBoundary !== resolvedFileBoundary) {
+        // Do not resolve it, "must specially be handled by loaders anyway"
+        return imported;
+    }
+    return resolvedModule;
 }
 
-let original: typeof import('tsickle/out/src/googmodule').resolveModuleName | undefined;
+let original: typeof import('@brianleishman/tsickle/out/src/googmodule').resolveModuleName | undefined;
 export function patchTsickleResolveModule() {
-	if (!original) {
-		const googmodule: typeof import('tsickle/out/src/googmodule') = require('tsickle/out/src/googmodule');
-		original = googmodule.resolveModuleName;
-		googmodule.resolveModuleName = resolveModuleName;
-	}
+    if (!original) {
+        const googmodule: typeof import('@brianleishman/tsickle/out/src/googmodule') = require('@brianleishman/tsickle/out/src/googmodule');
+        original = googmodule.resolveModuleName;
+        googmodule.resolveModuleName = resolveModuleName;
+    }
 }
 
 export function restoreTsickleResolveModule() {
-	if (original) {
-		require('tsickle/out/src/googmodule').resolveModuleName = original;
-		original = undefined;
-	}
+    if (original) {
+        require('@brianleishman/tsickle/out/src/googmodule').resolveModuleName = original;
+        original = undefined;
+    }
 }

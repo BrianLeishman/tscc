@@ -10,21 +10,21 @@
  * default target).
  */
 
-let original: typeof import('tsickle/out/src/decorators').transformDecoratorsOutputForClosurePropertyRenaming | undefined;
+let original: typeof import('@brianleishman/tsickle/out/src/decorators').transformDecoratorsOutputForClosurePropertyRenaming | undefined;
 
 export function patchTsickleDecoratorTransformer() {
-	if (!original) {
-		const decorators: typeof import('tsickle/out/src/decorators') = require('tsickle/out/src/decorators');
-		let original = decorators.transformDecoratorsOutputForClosurePropertyRenaming;
-		decorators.transformDecoratorsOutputForClosurePropertyRenaming = () => {
-			return (context) => (x => x);
-		};
-	}
+    if (!original) {
+        const decorators: typeof import('@brianleishman/tsickle/out/src/decorators') = require('@brianleishman/tsickle/out/src/decorators');
+        let original = decorators.transformDecoratorsOutputForClosurePropertyRenaming;
+        decorators.transformDecoratorsOutputForClosurePropertyRenaming = () => {
+            return (context) => (x => x);
+        };
+    }
 }
 
 export function restoreTsickleDecoratorTransformer() {
-	if (original) {
-		require('tsickle/src/decorators').transformDecoratorsOutputForClosurePropertyRenaming = original;
-		original = undefined;
-	}
+    if (original) {
+        require('@brianleishman/tsickle/src/decorators').transformDecoratorsOutputForClosurePropertyRenaming = original;
+        original = undefined;
+    }
 }
