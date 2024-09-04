@@ -1,5 +1,5 @@
 {
-    "name": "@tscc/tscc",
+    "name": "@brianleishman/tscc",
     "author": "theseanl",
     "description": "A typescript transpiler and bundler that wires up tsickle and closure compiler seamlessly",
     "keywords": [
@@ -8,19 +8,19 @@
         "tree-shaking",
         "minify-javascript"
     ],
-    "version": "0.9.2",
+    "version": "0.9.2-1",
     "main": "./dist/tscc.js",
     "bin": {
         "tscc": "./dist/main.js"
     },
     "license": "MIT",
-    "homepage": "https://github.com/theseanl/tscc",
+    "homepage": "https://github.com/brianleishman/tscc",
     "repository": {
         "type": "url",
-        "url": "https://github.com/theseanl/tscc"
+        "url": "https://github.com/brianleishman/tscc"
     },
     "bugs": {
-        "url": "https://github.com/theseanl/tscc"
+        "url": "https://github.com/brianleishman/tscc"
     },
     "scripts": {
         "clean": "rm -rf dist"

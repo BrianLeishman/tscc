@@ -52,9 +52,6 @@ var NodeListOf;
  */
 var RegExpExecArray;
 
-/** @typedef {!Map} */
-var ReadonlyMap;
-
 /** @typedef {!Set} */
 var ReadonlySet;
 
@@ -86,11 +83,6 @@ var WindowOrWorkerGlobalScope;
 
 /** @record */
 function CanvasDrawImage() {}
-
-/** @constructor */
-function CryptoKey() {};
-/** @constructor */
-function CryptoKeyPair() {};
 
 /** @typedef {!{handleEvent: function(Event):void}} */
 var EventListenerObject;
